@@ -1,39 +1,113 @@
+import os
+import subprocess
 import sys
-from setuptools import setup, Extension
-from torch.utils.cpp_extension import BuildExtension, include_paths, library_paths
 
-# Collecting include and library paths
-include_dirs = include_paths()
-library_dirs = library_paths()
-libraries = ["c10", "torch", "torch_cpu"]
-
-extra_compile_args = ["-std=c++17"]
-extra_link_args = []
-if sys.platform == "darwin":
-    shared_lib_ext = ".dylib"
-    extra_compile_args.append("-stdlib=libc++")
-    extra_link_args.extend(["-stdlib=libc++", "-mmacosx-version-min=10.9"])
-elif sys.platform == "linux":
-    extra_compile_args.append("-fPIC")
-    shared_lib_ext = ".so"
-else:
-    raise RuntimeError(f"Unsupported platform {sys.platform}")
+from setuptools import Extension, setup
+from setuptools.command.bdist_egg import bdist_egg
+from setuptools.command.build_ext import build_ext
+from wheel.bdist_wheel import bdist_wheel
 
 
-# Define the extension
-neighbors_convert_extension = Extension(
-    name="pet_neighbors_convert.neighbors_convert",
-    sources=["src/pet_neighbors_convert/neighbors_convert.cpp"],
-    include_dirs=include_dirs,
-    library_dirs=library_dirs,
-    libraries=libraries,
-    language="c++",
-    extra_compile_args=extra_compile_args,
-    extra_link_args=extra_link_args,
-)
+ROOT = os.path.realpath(os.path.dirname(__file__))
 
-setup(
-    ext_modules=[neighbors_convert_extension],
-    cmdclass={"build_ext": BuildExtension.with_options(no_python_abi_suffix=True)},
-    package_data={"pet_neighbors_convert": [f"neighbors_convert{shared_lib_ext}"]},
-)
+
+class universal_wheel(bdist_wheel):
+    # When building the wheel, the `wheel` package assumes that if we have a
+    # binary extension then we are linking to `libpython.so`; and thus the wheel
+    # is only usable with a single python version. This is not the case for
+    # here, and the wheel will be compatible with any Python >=3.7. This is
+    # tracked in https://github.com/pypa/wheel/issues/185, but until then we
+    # manually override the wheel tag.
+    def get_tag(self):
+        tag = bdist_wheel.get_tag(self)
+        # tag[2:] contains the os/arch tags, we want to keep them
+        return ("py3", "none") + tag[2:]
+
+
+class cmake_ext(build_ext):
+    """Build the native library using cmake"""
+
+    def run(self):
+        import torch
+
+        torch_major, torch_minor, *_ = torch.__version__.split(".")
+
+        source_dir = ROOT
+        build_dir = os.path.join(ROOT, "build", "cmake-build")
+        install_dir = os.path.join(
+            os.path.realpath(self.build_lib),
+            f"pet_neighbors_convert/torch-{torch_major}.{torch_minor}",
+        )
+
+        os.makedirs(build_dir, exist_ok=True)
+
+        cmake_options = [
+            "-DCMAKE_BUILD_TYPE=Release",
+            f"-DCMAKE_INSTALL_PREFIX={install_dir}",
+            f"-DPYTHON_EXECUTABLE={sys.executable}",
+        ]
+
+        if sys.platform.startswith("darwin"):
+            cmake_options.append("-DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=11.0")
+
+        # ARCHFLAGS is used by cibuildwheel to pass the requested arch to the
+        # compilers
+        ARCHFLAGS = os.environ.get("ARCHFLAGS")
+        if ARCHFLAGS is not None:
+            cmake_options.append(f"-DCMAKE_C_FLAGS={ARCHFLAGS}")
+            cmake_options.append(f"-DCMAKE_CXX_FLAGS={ARCHFLAGS}")
+
+        subprocess.run(
+            ["cmake", source_dir, *cmake_options],
+            cwd=build_dir,
+            check=True,
+        )
+        build_command = [
+            "cmake",
+            "--build",
+            build_dir,
+            "--target",
+            "install",
+        ]
+
+        subprocess.run(build_command, check=True)
+
+
+class bdist_egg_disabled(bdist_egg):
+    """Disabled version of bdist_egg
+
+    Prevents setup.py install performing setuptools' default easy_install,
+    which it should never ever do.
+    """
+
+    def run(self):
+        sys.exit(
+            "Aborting implicit building of eggs. "
+            "Use `pip install .` to install from source."
+        )
+
+
+if __name__ == "__main__":
+    try:
+        import torch
+
+        # if we have torch, we are building a wheel -  requires specific torch version
+        torch_v_major, torch_v_minor, *_ = torch.__version__.split(".")
+        torch_version = f"== {torch_v_major}.{torch_v_minor}.*"
+    except ImportError:
+        # otherwise we are building a sdist
+        torch_version = ">= 2.3"
+
+    install_requires = [f"torch {torch_version}"]
+
+    setup(
+        install_requires=install_requires,
+        ext_modules=[
+            Extension(name="neighbors_convert", sources=[]),
+        ],
+        cmdclass={
+            "build_ext": cmake_ext,
+            "bdist_egg": bdist_egg if "bdist_egg" in sys.argv else bdist_egg_disabled,
+            "bdist_wheel": universal_wheel,
+        },
+    )
