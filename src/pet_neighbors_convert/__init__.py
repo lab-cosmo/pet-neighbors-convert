@@ -1,5 +1,6 @@
 import torch
 import importlib.resources as pkg_resources
+from ._version import __version__  # noqa
 
 
 def load_neighbors_convert():

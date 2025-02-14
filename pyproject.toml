@@ -1,7 +1,33 @@
 [build-system]
-requires = [
-    "setuptools >= 68",
-    "wheel",
-    "torch",
-]
+requires = ["setuptools >= 68", "setuptools_scm>=8", "wheel", "torch >= 2.3"]
 build-backend = "setuptools.build_meta"
+
+[project]
+authors = [{name = "lab-cosmo developers"}]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
+dependencies = ["torch >= 2.3"]
+description = "Extension for PET model for reordering the neighbors during message passing."
+dynamic = ["version"]
+license = {text = "BSD-3-Clause"}
+name = "pet-neighbors-convert"
+readme = "README.rst"
+requires-python = ">=3.9"
+
+[tool.check-manifest]
+ignore = ["src/pet_neighbors_convert/_version.py"]
+
+[tool.setuptools_scm]
+version_file = "src/pet_neighbors_convert/_version.py"
+
+[tool.setuptools.packages.find]
+where = ["src"]
