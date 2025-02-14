@@ -42,8 +42,6 @@ std::vector<at::Tensor> process_neighbors_cpu(at::Tensor i_list, at::Tensor j_li
     at::Tensor mask = torch::ones({n_atoms, max_size}, options_bool);  // Tensor to store the mask
     at::Tensor neighbor_species = all_species.size(0) * torch::ones({n_atoms, max_size}, options_int);
 
-    int64_t scalar_attr_dim = 0;
-
     // Temporary array to track the current population index
     int_t* current_index = new int_t[n_atoms];
     std::fill(current_index, current_index + n_atoms, 0);  // Fill the array with zeros

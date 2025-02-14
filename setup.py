@@ -23,7 +23,7 @@ else:
 # Define the extension
 neighbors_convert_extension = Extension(
     name="pet_neighbors_convert.neighbors_convert",
-    sources=["src/neighbors_convert.cpp"],
+    sources=["src/pet_neighbors_convert/neighbors_convert.cpp"],
     include_dirs=include_dirs,
     library_dirs=library_dirs,
     libraries=libraries,
@@ -33,12 +33,7 @@ neighbors_convert_extension = Extension(
 )
 
 setup(
-    name="pet_neighbors_convert",
-    version="0.0.0",
-    packages=["pet_neighbors_convert"],
-    package_dir={"pet_neighbors_convert": "src"},
     ext_modules=[neighbors_convert_extension],
     cmdclass={"build_ext": BuildExtension.with_options(no_python_abi_suffix=True)},
     package_data={"pet_neighbors_convert": [f"neighbors_convert{shared_lib_ext}"]},
-    include_package_data=True,
 )
