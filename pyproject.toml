@@ -23,6 +23,12 @@ name = "pet-neighbors-convert"
 readme = "README.rst"
 requires-python = ">=3.9"
 
+[project.urls]
+homepage = "https://github.com/lab-cosmo/pet-neighbors-convert"
+documentation = "https://github.com/lab-cosmo/pet-neighbors-convert"
+repository = "https://github.com/lab-cosmo/pet-neighbors-convert"
+issues = "https://github.com/lab-cosmo/pet-neighbors-convert/issues"
+
 [tool.check-manifest]
 ignore = ["src/pet_neighbors_convert/_version.py"]
 
