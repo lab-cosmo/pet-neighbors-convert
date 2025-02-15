@@ -1,11 +1,12 @@
 [build-system]
-requires = ["setuptools >= 68", "setuptools_scm>=8", "wheel", "torch >= 2.3"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools >= 68", "setuptools_scm>=8", "wheel >= 0.36"]
+build-backend = "backend"
+backend-path = ["build-backend"]
 
 [project]
 authors = [{name = "lab-cosmo developers"}]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: BSD License",
     "Operating System :: POSIX",
@@ -15,9 +16,8 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
-dependencies = ["torch >= 2.3"]
-description = "Extension for PET model for reordering the neighbors during message passing."
-dynamic = ["version"]
+description = "PET model extension for processing neighbor lists"
+dynamic = ["version", "dependencies"]
 license = {text = "BSD-3-Clause"}
 name = "pet-neighbors-convert"
 readme = "README.rst"

@@ -2,12 +2,15 @@ graft src
 
 include LICENSE
 include README.rst
+include CMakeLists.txt
 
-prune tests
 prune .github
 prune .tox
+prune tests
+prune scripts
 
 exclude .gitignore
 exclude tox.ini
+recursive-include build-backend *.py
 
 global-exclude *.py[cod] __pycache__/* *.so *.dylib
